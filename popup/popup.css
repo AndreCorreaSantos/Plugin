@@ -1,0 +1,43 @@
+/* Define a largura e a altura do popup para garantir espaço suficiente */
+body {
+    width: 300px; /* Largura do popup */
+    height: 200px; /* Altura do popup */
+    background-color: #f9f9f9; /* Cor de fundo do popup */
+    padding: 10px; /* Espaçamento interno */
+    font-family: Arial, sans-serif; /* Fonte padrão para o popup */
+  }
+  
+  /* Estilo para o título do popup */
+  h1 {
+    font-size: 18px; /* Tamanho da fonte do título */
+    color: #333; /* Cor do texto do título */
+    margin-bottom: 10px; /* Espaçamento inferior do título */
+  }
+  
+  /* Estilo para parágrafos no popup */
+  p {
+    font-size: 14px; /* Tamanho da fonte dos parágrafos */
+    color: #555; /* Cor do texto dos parágrafos */
+  }
+  
+  /* Estilo para botões no popup */
+  button {
+    padding: 5px 10px; /* Espaçamento interno dos botões */
+    background-color: #4CAF50; /* Cor de fundo do botão */
+    color: white; /* Cor do texto do botão */
+    border: none; /* Remover bordas */
+    border-radius: 4px; /* Cantos arredondados */
+    cursor: pointer; /* Cursor em formato de mão ao passar o mouse */
+  }
+  
+  button:hover {
+    background-color: #45a049; /* Cor ao passar o mouse sobre o botão */
+  }
+  
+  /* Estilo para o rodapé do popup */
+  footer {
+    font-size: 12px; /* Tamanho da fonte do rodapé */
+    color: #777; /* Cor do texto do rodapé */
+    text-align: center; /* Centralizar o texto no rodapé */
+  }
+  

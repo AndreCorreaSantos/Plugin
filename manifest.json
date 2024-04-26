@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "DecoScanner",
+  "version": "1.0",
+  "description": "Detecta tentativas de conexões a domínios de terceiros.",
+  
+  "permissions": ["<all_urls>", "webRequest", "webRequestBlocking"],
+  
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  
+  "browser_action": {
+    "default_icon": "icons/border-48.png",
+    "default_title": "DecoScanner",
+    "default_popup": "popup/popup.html"
+  }
+}
