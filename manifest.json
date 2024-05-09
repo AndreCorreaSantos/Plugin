@@ -4,7 +4,15 @@
   "version": "1.0",
   "description": "Detecta tentativas de conexões a domínios de terceiros.",
   
-  "permissions": ["<all_urls>", "webRequest", "webRequestBlocking"],
+  "permissions": [
+                "<all_urls>", 
+                "activeTab",
+                "storage",
+                "tabs",
+                "cookies", 
+                "webRequest",
+                "webRequestBlocking"
+                ],
   
   "background": {
     "scripts": ["background.js"],
