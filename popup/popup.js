@@ -14,8 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Update the Local Storage usage
     const localStorageUsageElement = document.getElementById("local-storage-usage");
-    console.log(response);
-    // localStorageUsageElement.textContent = response.localStorageData;
+    localStorageUsageElement.textContent = response.localStorageData;
     
   }).catch(error => {
     console.error("Erro ao receber resposta:", error);
