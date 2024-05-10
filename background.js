@@ -145,14 +145,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getSecurityStats") {
     updateLocalStorageUsage(); // Update localStorage data before sending
     updateCookieCount(); // Update the cookie count before sending
-    const grade = calculateGrade(thirdPartyConnectionAttempts, suspiciousRedirects, localStorageUsage, cookies, canvasFingerprintAttempts);
+    const score = calculateGrade(thirdPartyConnectionAttempts, suspiciousRedirects, localStorageUsage, cookies, canvasFingerprintAttempts);
     sendResponse({
         thirdPartyConnectionAttempts: thirdPartyConnectionAttempts,
         suspiciousRedirects: suspiciousRedirects,
         localStorageData: localStorageUsage,
         cookieCount: cookies,
         canvasFingerprint: canvasFingerprintAttempts,
-        grade:grade
+        grade: score
     });
   }
 });
