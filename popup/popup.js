@@ -15,6 +15,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Update the Local Storage usage
     const localStorageUsageElement = document.getElementById("local-storage-usage");
     localStorageUsageElement.textContent = response.localStorageData;
+  
+    const cookieCount = document.getElementById("cookie-count");
+    cookieCount.textContent = response.cookieCount;
+
+    const canvasFingerprint = document.getElementById("canvas-fingerprint");
+    canvasFingerprint.textContent = response.canvasFingerprint;
+
+    const grade = document.getElementById("grade");
+    grade.textContent = response.grade;
     
   }).catch(error => {
     console.error("Erro ao receber resposta:", error);
