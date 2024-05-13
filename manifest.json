@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "DecoScanner",
+  "name": "PinkWard",
   "version": "1.0",
   "description": "Detecta tentativas de conexões a domínios de terceiros.",
   

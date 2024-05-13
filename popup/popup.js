@@ -16,14 +16,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const localStorageUsageElement = document.getElementById("local-storage-usage");
     localStorageUsageElement.textContent = response.localStorageData;
   
-    const cookieCount = document.getElementById("cookie-count");
-    cookieCount.textContent = response.cookieCount;
+    // Update the count of cookies
+    const firstPartyCookieElement = document.getElementById("first-party-cookie-count");
+    firstPartyCookieElement.textContent = response.firstPartyCookies;
+
+    // Update the count of third-party cookies
+    const thirdPartyCookieElement = document.getElementById("third-party-cookie-count");
+    thirdPartyCookieElement.textContent = response.thirdPartyCookies;
+
+    // Update the count of supercookies
+    const supercookieElement = document.getElementById("supercookie-count");
+    supercookieElement.textContent = response.superCookies;
 
     const canvasFingerprint = document.getElementById("canvas-fingerprint");
     canvasFingerprint.textContent = response.canvasFingerprint;
 
     const grade = document.getElementById("grade");
     grade.textContent = response.grade;
+
+    console.log(response.thirdPartyCookies);
     
   }).catch(error => {
     console.error("Erro ao receber resposta:", error);

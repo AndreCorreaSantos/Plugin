@@ -5,7 +5,9 @@ let suspiciousRedirects = 0;
 
 let localStorageUsage = 0; // Tamanho total de todos os itens armazenados no localStorage
 
-let cookies = 0; // Número total de cookies configurados
+let firstPartyCookies = 0; // Número total de cookies configurados
+let thirdPartyCookies = 0; // Número total de cookies de terceiros
+let superCookies = 0; // Número total de supercookies
 
 let canvasFingerprintAttempts = 0;  // Contador de tentativas de fingerprinting
 
@@ -75,32 +77,19 @@ function updateLocalStorageUsage() {
   console.log("Uso atualizado do localStorage em MB:", localStorageUsage, "MB");
 }
 
-// Função para atualizar a contagem de cookies para todos os sites
-function updateCookieCount() {
-  let totalCookies = 0; // Inicializa a contagem total de cookies
-  browser.tabs.query({}).then(tabs => {
-      let promises = tabs.map(tab => {
-          const tabUrl = tab.url;
-          return browser.cookies.getAll({url: tabUrl}).then(cookies => {
-              cookies.forEach(cookie => {
-                  const cookieDomain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain;
-                  if (!cookieDomain.includes(new URL(tabUrl).hostname)) {
-                      totalCookies++; // Conta apenas cookies de terceira parte
-                  }
-              });
-              return cookies.length; // Retorna a contagem total de cookies para esta aba
-          });
+function updateCookieCount(url, tabHostname, tabId) {
+  browser.cookies.getAll({url: url}).then(cookies => {
+      cookies.forEach(cookie => {
+          const cookieDomain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain;
+          if (cookieDomain.includes(tabHostname)) {
+              firstPartyCookies++;
+          } else {
+              thirdPartyCookies++;
+          }
       });
-
-      // Aguarda a resolução de todas as promessas de contagem de cookies
-      Promise.all(promises).then(results => {
-          cookies = results.reduce((acc, curr) => acc + curr, 0); // Soma todas as contagens de cookies
-          console.log(`Total de cookies atualizado: ${cookies}`);
-      });
-  }).catch(error => {
-      console.error('Erro ao buscar todas as abas e cookies:', error);
   });
 }
+
 
 // Adicionando um listener para rastrear mudanças nos cookies
 browser.cookies.onChanged.addListener((changeInfo) => {
@@ -109,51 +98,56 @@ browser.cookies.onChanged.addListener((changeInfo) => {
 });
 
 
-function calculateGrade(thirdPartyConnectionAttempts, suspiciousRedirects, localStorageUsage, cookies, canvasFingerprintAttempts) {
-  let grade = 100; // Começa com pontuação perfeita e deduz pontos por riscos de segurança
+function calculateGrade(thirdPartyConnectionAttempts, suspiciousRedirects, localStorageUsage, firstPartyCookies, thirdPartyCookies, superCookies, canvasFingerprintAttempts) {
+  let grade = 100; // Começa com pontuação perfeita
 
   // Deduz pontos por tentativas de conexões de terceiros
   if (thirdPartyConnectionAttempts > 20) {
-    grade -= 20; // Penalidade severa para tentativas muito altas
+      grade -= 20; // Penalidade severa para tentativas muito altas
   } else if (thirdPartyConnectionAttempts > 10) {
-    grade -= 10; // Penalidade moderada
+      grade -= 10; // Penalidade moderada
   } else if (thirdPartyConnectionAttempts > 0) {
-    grade -= 5; // Penalidade leve
+      grade -= 5; // Penalidade leve
   }
 
   // Deduz pontos por redirecionamentos suspeitos
   if (suspiciousRedirects > 5) {
-    grade -= 25; // Risco de alto impacto
+      grade -= 25; // Risco de alto impacto
   } else if (suspiciousRedirects > 0) {
-    grade -= 10;
+      grade -= 10; // Penalidade menor para poucos redirecionamentos
   }
 
   // Deduz pontos por uso excessivo de localStorage
   if (localStorageUsage > 5) {
-    grade -= 15; // Penalidade maior por uso significativo de armazenamento
+      grade -= 15; // Penalidade maior por uso significativo de armazenamento
   } else if (localStorageUsage > 1) {
-    grade -= 5;
+      grade -= 5; // Penalidade menor por uso excessivo menor
   }
 
-  // Deduz pontos por excesso de cookies
-  if (cookies > 50) {
-    grade -= 20;
-  } else if (cookies > 10) {
-    grade -= 10;
-  } else if (cookies > 0) {
-    grade -= 5;
+  // Deduz pontos baseado nos cookies
+  if (thirdPartyCookies > 30) {
+      grade -= 20; // Alta penalidade por numerosos cookies de terceiros
+  } else if (thirdPartyCookies > 10) {
+      grade -= 10; // Penalidade moderada
+  }
+
+  if (superCookies > 5) {
+      grade -= 25; // Muito alta penalidade para supercookies
+  } else if (superCookies > 0) {
+      grade -= 10; // Penalidade menor
   }
 
   // Deduz pontos por tentativas de fingerprinting em canvas
   if (canvasFingerprintAttempts > 5) {
-    grade -= 30; // Risco muito alto de invasão de privacidade
+      grade -= 30; // Risco muito alto de invasão de privacidade
   } else if (canvasFingerprintAttempts > 0) {
-    grade -= 15;
+      grade -= 15; // Penalidade menor
   }
 
   // Garante que a nota não fique abaixo de 0
   return Math.max(0, grade);
 }
+
 
 // Ouve mensagens e responde com as contagens
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -162,12 +156,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getSecurityStats") {
     updateLocalStorageUsage(); // Atualiza os dados do localStorage antes de enviar
     updateCookieCount(); // Atualiza a contagem de cookies antes de enviar
-    const score = calculateGrade(thirdPartyConnectionAttempts, suspiciousRedirects, localStorageUsage, cookies, canvasFingerprintAttempts);
+    const score = calculateGrade(thirdPartyConnectionAttempts, suspiciousRedirects, localStorageUsage, firstPartyCookies,thirdPartyCookies,superCookies, canvasFingerprintAttempts);
     sendResponse({
       thirdPartyConnectionAttempts: thirdPartyConnectionAttempts,
       suspiciousRedirects: suspiciousRedirects,
       localStorageData: localStorageUsage,
-      cookieCount: cookies,
+      firstPartyCookies: firstPartyCookies,
+      thirdPartyCookies: thirdPartyCookies,
+      superCookies: superCookies,
       canvasFingerprint: canvasFingerprintAttempts,
       grade: score
     });
