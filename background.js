@@ -86,6 +86,10 @@ function updateCookieCount(url, tabHostname, tabId) {
           } else {
               thirdPartyCookies++;
           }
+          // Verifica se o cookie é persistente e possui um valor único
+          if (cookie.expirationDate && cookie.value.length > 16) {
+              supercookies++;
+          }
       });
   });
 }
@@ -155,7 +159,11 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === "getSecurityStats") {
     updateLocalStorageUsage(); // Atualiza os dados do localStorage antes de enviar
-    updateCookieCount(); // Atualiza a contagem de cookies antes de enviar
+    browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
+      const tab = tabs[0];
+      const tabHostname = new URL(tab.url).hostname;
+      updateCookieCount(tab.url, tabHostname, tab.id);
+    });
     const score = calculateGrade(thirdPartyConnectionAttempts, suspiciousRedirects, localStorageUsage, firstPartyCookies,thirdPartyCookies,superCookies, canvasFingerprintAttempts);
     sendResponse({
       thirdPartyConnectionAttempts: thirdPartyConnectionAttempts,
