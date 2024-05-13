@@ -20,8 +20,8 @@
   },
   
   "browser_action": {
-    "default_icon": "icons/border-48.png",
-    "default_title": "DecoScanner",
+    "default_icon": "icons/icon.png",
+    "default_title": "PinkWard",
     "default_popup": "popup/popup.html"
   }
 }

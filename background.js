@@ -3,156 +3,173 @@ let thirdPartyConnectionAttempts = 0;
 // Contagem de redirecionamentos suspeitos
 let suspiciousRedirects = 0;
 
-let localStorageUsage = 0; // Total size of all items stored in localStorage
+let localStorageUsage = 0; // Tamanho total de todos os itens armazenados no localStorage
 
-let cookies = 0; // Total number of cookies set
+let cookies = 0; // Número total de cookies configurados
 
-let canvasFingerprintAttempts = 0;  // Counter for fingerprinting attempts
+let canvasFingerprintAttempts = 0;  // Contador de tentativas de fingerprinting
 
-// Function to extract the domain from a URL
+// Função para extrair o domínio de uma URL
 function getDomainFromUrl(url) {
   const urlObj = new URL(url);
   return urlObj.hostname;
 }
 
-// Function to warn the user about suspicious redirects
+// Função para alertar o usuário sobre redirecionamentos suspeitos
 function notifyUser(title, message) {
   browser.notifications.create({
-      "type": "basic",
-      "iconUrl": browser.extension.getURL("icons/border-48.png"),
-      "title": title,
-      "message": message
+    "type": "basic",
+    "iconUrl": browser.extension.getURL("icons/border-48.png"),
+    "title": title,
+    "message": message
   });
 }
 
-// Listener for messages from content scripts
+// listener para mensagens de scripts de conteúdo
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'fingerprintDetected') {
-      canvasFingerprintAttempts++;
-      notifyUser("Tentativa de Fingerprinting Detectada", "Um script tentou extrair informações de impressão digital do seu navegador.");
+    canvasFingerprintAttempts++;
+    notifyUser("Tentativa de Fingerprinting Detectada", "Um script tentou extrair informações de impressão digital do seu navegador.");
   }
 });
 
-// Listener for web requests to count third-party connections and suspicious redirects
+// Listener para solicitações na web para contar conexões de terceiros e redirecionamentos suspeitos
 browser.webRequest.onBeforeRequest.addListener(
-    (details) => {
-      const requestDomain = new URL(details.url).hostname;
-      const pageDomain = details.initiator || details.originUrl ? new URL(details.initiator || details.originUrl).hostname : null;
+  (details) => {
+    const requestDomain = new URL(details.url).hostname;
+    const pageDomain = details.initiator || details.originUrl ? new URL(details.initiator || details.originUrl).hostname : null;
 
-      // Detect third-party connections
-      if (requestDomain !== pageDomain) {
-        thirdPartyConnectionAttempts++; // Increment count
-        console.log("Tentativas de terceiros:", thirdPartyConnectionAttempts);
-      }
+    // Detecta conexões de terceiros
+    if (requestDomain !== pageDomain) {
+      thirdPartyConnectionAttempts++; // Incrementa a contagem
+      console.log("Tentativas de conexões de terceiros:", thirdPartyConnectionAttempts);
+    }
 
-      // Detect suspicious redirects
-      if (details.type === "main_frame" && details.redirectUrl && !details.initiator) {
-        suspiciousRedirects++; // Increment count
-        notifyUser("Redirecionamento Suspeito Detectado", "O site tentou redirecionar você para outro site.");
-        console.log("Redirecionamento suspeito detectado:", suspiciousRedirects); 
-      }
-    },
-    { urls: ["<all_urls>"] },
-    ["blocking"]
+    // Detecta redirecionamentos suspeitos
+    if (details.type === "main_frame" && details.redirectUrl && !details.initiator) {
+      suspiciousRedirects++; // Incrementa a contagem
+      notifyUser("Redirecionamento Suspeito Detectado", "O site tentou redirecionar você para outro site.");
+      console.log("Redirecionamento suspeito detectado:", suspiciousRedirects);
+    }
+  },
+  { urls: ["<all_urls>"] },
+  ["blocking"]
 );
 
-// Function to update the total usage of localStorage
+// Função para atualizar o uso total do localStorage
 function updateLocalStorageUsage() {
-  localStorageUsage = 0; // Reset before calculating
+  localStorageUsage = 0; // Reseta antes de calcular
 
   for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-          const value = localStorage.getItem(key);
-          // Estimate the size in bytes (assuming each character is 16 bits or 2 bytes, which is common for UTF-16 encoding)
-          localStorageUsage += (key.length + value.length) * 2;
-      }
+    const key = localStorage.key(i);
+    if (key) {
+      const value = localStorage.getItem(key);
+      // Estima o tamanho em bytes (assumindo que cada caractere tem 16 bits ou 2 bytes, comum para codificação UTF-16)
+      localStorageUsage += (key.length + value.length) * 2;
+    }
   }
 
-  // Convert bytes to megabytes with two decimal places
+  // Converte bytes para megabytes com duas casas decimais
   localStorageUsage = (localStorageUsage / 1024 / 1024).toFixed(2);
 
-  console.log("Atualização do uso do localStorage em MB:", localStorageUsage, "MB");
+  console.log("Uso atualizado do localStorage em MB:", localStorageUsage, "MB");
 }
 
-// Function to count cookies for all websites
+// Função para atualizar a contagem de cookies para todos os sites
 function updateCookieCount() {
-  browser.cookies.getAll({}).then((cookies) => {
-    console.log(`Total cookies: ${cookies.length}`);
-    cookies = cookies.length; // Update the global cookie count
-  }).catch((error) => {
-    console.error('Error fetching cookies:', error);
+  let totalCookies = 0; // Inicializa a contagem total de cookies
+  browser.tabs.query({}).then(tabs => {
+      let promises = tabs.map(tab => {
+          const tabUrl = tab.url;
+          return browser.cookies.getAll({url: tabUrl}).then(cookies => {
+              cookies.forEach(cookie => {
+                  const cookieDomain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain;
+                  if (!cookieDomain.includes(new URL(tabUrl).hostname)) {
+                      totalCookies++; // Conta apenas cookies de terceira parte
+                  }
+              });
+              return cookies.length; // Retorna a contagem total de cookies para esta aba
+          });
+      });
+
+      // Aguarda a resolução de todas as promessas de contagem de cookies
+      Promise.all(promises).then(results => {
+          cookies = results.reduce((acc, curr) => acc + curr, 0); // Soma todas as contagens de cookies
+          console.log(`Total de cookies atualizado: ${cookies}`);
+      });
+  }).catch(error => {
+      console.error('Erro ao buscar todas as abas e cookies:', error);
   });
 }
 
-// Adding a listener to track cookie changes
+// Adicionando um listener para rastrear mudanças nos cookies
 browser.cookies.onChanged.addListener((changeInfo) => {
-  console.log('Cookie changed:', changeInfo); // Log the change info for debugging
-  updateCookieCount(); // Update the count whenever a cookie is added or removed
+  console.log('Cookie alterado:', changeInfo); // Registra a informação da mudança para depuração
+  updateCookieCount(); // Atualiza a contagem sempre que um cookie é adicionado ou removido
 });
 
+
 function calculateGrade(thirdPartyConnectionAttempts, suspiciousRedirects, localStorageUsage, cookies, canvasFingerprintAttempts) {
-  let grade = 100; // Start from a perfect score and deduct points for security risks
+  let grade = 100; // Começa com pontuação perfeita e deduz pontos por riscos de segurança
 
-  // Deduct points for third-party connection attempts
+  // Deduz pontos por tentativas de conexões de terceiros
   if (thirdPartyConnectionAttempts > 20) {
-      grade -= 20; // Severe penalty for very high attempts
+    grade -= 20; // Penalidade severa para tentativas muito altas
   } else if (thirdPartyConnectionAttempts > 10) {
-      grade -= 10; // Moderate penalty
+    grade -= 10; // Penalidade moderada
   } else if (thirdPartyConnectionAttempts > 0) {
-      grade -= 5; // Minor penalty
+    grade -= 5; // Penalidade leve
   }
 
-  // Deduct points for suspicious redirects
+  // Deduz pontos por redirecionamentos suspeitos
   if (suspiciousRedirects > 5) {
-      grade -= 25; // High impact risk
+    grade -= 25; // Risco de alto impacto
   } else if (suspiciousRedirects > 0) {
-      grade -= 10;
+    grade -= 10;
   }
 
-  // Deduct points for excessive localStorage usage
+  // Deduz pontos por uso excessivo de localStorage
   if (localStorageUsage > 5) {
-      grade -= 15; // Larger penalty for significant storage use
+    grade -= 15; // Penalidade maior por uso significativo de armazenamento
   } else if (localStorageUsage > 1) {
-      grade -= 5;
+    grade -= 5;
   }
 
-  // Deduct points for excessive cookies
+  // Deduz pontos por excesso de cookies
   if (cookies > 50) {
-      grade -= 20;
+    grade -= 20;
   } else if (cookies > 10) {
-      grade -= 10;
+    grade -= 10;
   } else if (cookies > 0) {
-      grade -= 5;
+    grade -= 5;
   }
 
-  // Deduct points for canvas fingerprinting attempts
+  // Deduz pontos por tentativas de fingerprinting em canvas
   if (canvasFingerprintAttempts > 5) {
-      grade -= 30; // Very high risk of privacy invasion
+    grade -= 30; // Risco muito alto de invasão de privacidade
   } else if (canvasFingerprintAttempts > 0) {
-      grade -= 15;
+    grade -= 15;
   }
 
-  // Ensure that grade does not go below 0
+  // Garante que a nota não fique abaixo de 0
   return Math.max(0, grade);
 }
 
-
-// Listen for messages and respond with the counts
+// Ouve mensagens e responde com as contagens
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Mensagem recebida:", message);
-  
+
   if (message.action === "getSecurityStats") {
-    updateLocalStorageUsage(); // Update localStorage data before sending
-    updateCookieCount(); // Update the cookie count before sending
+    updateLocalStorageUsage(); // Atualiza os dados do localStorage antes de enviar
+    updateCookieCount(); // Atualiza a contagem de cookies antes de enviar
     const score = calculateGrade(thirdPartyConnectionAttempts, suspiciousRedirects, localStorageUsage, cookies, canvasFingerprintAttempts);
     sendResponse({
-        thirdPartyConnectionAttempts: thirdPartyConnectionAttempts,
-        suspiciousRedirects: suspiciousRedirects,
-        localStorageData: localStorageUsage,
-        cookieCount: cookies,
-        canvasFingerprint: canvasFingerprintAttempts,
-        grade: score
+      thirdPartyConnectionAttempts: thirdPartyConnectionAttempts,
+      suspiciousRedirects: suspiciousRedirects,
+      localStorageData: localStorageUsage,
+      cookieCount: cookies,
+      canvasFingerprint: canvasFingerprintAttempts,
+      grade: score
     });
   }
 });
