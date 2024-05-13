@@ -10,6 +10,7 @@ let thirdPartyCookies = 0; // Número total de cookies de terceiros
 let superCookies = 0; // Número total de supercookies
 
 let canvasFingerprintAttempts = 0;  // Contador de tentativas de fingerprinting
+let hook = 0; // Contador de tentativas de hijacking
 
 // Função para extrair o domínio de uma URL
 function getDomainFromUrl(url) {
@@ -40,6 +41,16 @@ browser.webRequest.onBeforeRequest.addListener(
   (details) => {
     const requestDomain = new URL(details.url).hostname;
     const pageDomain = details.initiator || details.originUrl ? new URL(details.initiator || details.originUrl).hostname : null;
+    const requestPort = new URL(details.url).port;
+    //detectando risco de hijacking
+    const normalPorts = ['80', '443'];
+    // hijacking ou hook detectado
+    if (!normalPorts.includes(requestPort)){
+      // avisar user sobre risco de hijacking
+      console.log(requestPort);
+      hook++;
+      notifyUser("Risco de Hijacking Detectado", "O site tentou sequestrar a conexão para um servidor de risco.");
+    }
 
     // Detecta conexões de terceiros
     if (requestDomain !== pageDomain) {
@@ -57,6 +68,7 @@ browser.webRequest.onBeforeRequest.addListener(
   { urls: ["<all_urls>"] },
   ["blocking"]
 );
+
 
 // Função para atualizar o uso total do localStorage
 function updateLocalStorageUsage() {
@@ -173,6 +185,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       thirdPartyCookies: thirdPartyCookies,
       superCookies: superCookies,
       canvasFingerprint: canvasFingerprintAttempts,
+      hook: hook,
       grade: score
     });
   }

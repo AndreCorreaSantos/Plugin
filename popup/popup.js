@@ -31,6 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const canvasFingerprint = document.getElementById("canvas-fingerprint");
     canvasFingerprint.textContent = response.canvasFingerprint;
 
+    const hook = document.getElementById("hook");
+    hook.textContent = response.hook;
+
     const grade = document.getElementById("grade");
     grade.textContent = response.grade;
 
