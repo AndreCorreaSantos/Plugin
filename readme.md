@@ -29,10 +29,39 @@ Esta extensão para navegador é projetada para melhorar a segurança e a privac
 - **Descrição**: Detecta tentativas de utilizar o elemento canvas do HTML para coletar impressões digitais do dispositivo do usuário.
 - **Lógica**: Scripts de conteúdo notificam a extensão quando detectam tentativas de usar APIs de fingerprinting. A extensão então incrementa um contador e alerta o usuário.
 
+### Detecção de Hijacking e Hook
+
+- **Descrição**: Monitora e detecta tentativas de hijacking e hook durante a navegação.
+- **Lógica**: A extensão verifica o número da porta de cada solicitação de rede. Se a solicitação usar uma porta que não é padrão (80 ou 443), considera-se uma tentativa de hijacking e o contador é incrementado. Isso ajuda a identificar tentativas de redirecionamento malicioso para portas não convencionais, o que pode indicar um ataque.
+
 ### Cálculo de Pontuação de Segurança
 
 - **Descrição**: Calcula uma pontuação de segurança com base em várias métricas coletadas pela extensão.
-- **Lógica**: A pontuação começa em 100. Deduções são aplicadas com base no número de conexões de terceiros, redirecionamentos suspeitos, uso excessivo de `localStorage`, número de cookies e tentativas de fingerprinting de canvas. Pontos são subtraídos em escalas variadas para refletir o nível de risco associado a cada métrica.
+- **Lógica**: A pontuação começa em 100. Deduções são aplicadas com base nas seguintes métricas:
+
+  - **Conexões de Terceiros**:
+    - Mais de 20 tentativas: -20 pontos
+    - 10 a 20 tentativas: -10 pontos
+    - 1 a 10 tentativas: -5 pontos
+  - **Redirecionamentos Suspeitos**:
+    - Mais de 5 redirecionamentos: -25 pontos
+    - 1 a 5 redirecionamentos: -10 pontos
+  - **Uso do localStorage**:
+    - Mais de 5 MB: -15 pontos
+    - 1 a 5 MB: -5 pontos
+  - **Cookies de Terceiros**:
+    - Mais de 30 cookies: -20 pontos
+    - 10 a 30 cookies: -10 pontos
+  - **Supercookies**:
+    - Mais de 5 supercookies: -25 pontos
+    - 1 a 5 supercookies: -10 pontos
+  - **Tentativas de Fingerprinting de Canvas**:
+    - Mais de 5 tentativas: -30 pontos
+    - 1 a 5 tentativas: -15 pontos
+  - **Tentativas de Hijacking**:
+    - Cada tentativa de hijacking identificada: -5 pontos
+
+  A pontuação é garantida a não ficar abaixo de 0. Esta lógica permite que os usuários compreendam como diferentes atividades e riscos afetam a sua pontuação de segurança.
 
 ### Interface de Usuário e Notificações
 
