@@ -49,7 +49,6 @@ browser.webRequest.onBeforeRequest.addListener(
       // avisar user sobre risco de hijacking
       console.log(requestPort);
       hook++;
-      notifyUser("Risco de Hijacking Detectado", "O site tentou sequestrar a conexão para um servidor de risco.");
     }
 
     // Detecta conexões de terceiros
@@ -100,7 +99,7 @@ function updateCookieCount(url, tabHostname, tabId) {
           }
           // Verifica se o cookie é persistente e possui um valor único
           if (cookie.expirationDate && cookie.value.length > 16) {
-              supercookies++;
+              superCookies++;
           }
       });
   });

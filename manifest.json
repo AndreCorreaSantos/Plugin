@@ -11,6 +11,7 @@
                 "tabs",
                 "cookies", 
                 "webRequest",
+                "notifications",
                 "webRequestBlocking"
                 ],
   
